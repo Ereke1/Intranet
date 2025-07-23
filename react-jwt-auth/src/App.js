@@ -1,11 +1,12 @@
+// App.js
 import React, { Component } from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
-import PrivateRoute from "./components/private-route.component";
-
 import AuthService from "./services/auth.service";
+import EventBus from "./common/EventBus";
 
+// Импорт компонентов
 import Login from "./components/login.component";
 import Register from "./components/register.component";
 import Home from "./components/home.component";
@@ -13,140 +14,80 @@ import Profile from "./components/profile.component";
 import BoardUser from "./components/board-user.component";
 import BoardModerator from "./components/board-moderator.component";
 import BoardAdmin from "./components/board-admin.component";
-
-// import AuthVerify from "./common/auth-verify";
-import EventBus from "./common/EventBus";
+import Header from "./components/header.component";
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.logOut = this.logOut.bind(this);
+    constructor(props) {
+        super(props);
+        this.logOut = this.logOut.bind(this);
 
-    this.state = {
-      showModeratorBoard: false,
-      showAdminBoard: false,
-      currentUser: undefined,
-    };
-  }
-
-  componentDidMount() {
-    const user = AuthService.getCurrentUser();
-
-    if (user) {
-      this.setState({
-        currentUser: user,
-        showModeratorBoard: user.roles.includes("ROLE_MODERATOR"),
-        showAdminBoard: user.roles.includes("ROLE_ADMIN"),
-      });
+        this.state = {
+            showModeratorBoard: false,
+            showAdminBoard: false,
+            currentUser: undefined,
+        };
     }
-    
-    EventBus.on("logout", () => {
-      this.logOut();
-    });
-  }
 
-  componentWillUnmount() {
-    EventBus.remove("logout");
-  }
+    componentDidMount() {
+        const user = AuthService.getCurrentUser();
 
-  logOut() {
-    AuthService.logout();
-    this.setState({
-      showModeratorBoard: false,
-      showAdminBoard: false,
-      currentUser: undefined,
-    });
-  }
+        if (user) {
+            this.setState({
+                currentUser: user,
+                showModeratorBoard: user.roles.includes("ROLE_MODERATOR"),
+                showAdminBoard: user.roles.includes("ROLE_ADMIN"),
+            });
+        }
 
-  render() {
-    const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
+        EventBus.on("logout", () => {
+            this.logOut();
+        });
+    }
 
-    return (
-      <div>
-        <nav className="navbar navbar-expand navbar-dark bg-dark">
-          <Link to={"/"} className="navbar-brand">
-            Fz Hasbi
-          </Link>
-          <div className="navbar-nav mr-auto">
-            <li className="nav-item">
-              <Link to={"/home"} className="nav-link">
-                Home
-              </Link>
-            </li>
+    componentWillUnmount() {
+        EventBus.remove("logout");
+    }
 
-            {showModeratorBoard && (
-              <li className="nav-item">
-                <Link to={"/mod"} className="nav-link">
-                  Moderator Board
-                </Link>
-              </li>
-            )}
+    logOut() {
+        AuthService.logout();
+        this.setState({
+            showModeratorBoard: false,
+            showAdminBoard: false,
+            currentUser: undefined,
+        });
+    }
 
-            {showAdminBoard && (
-              <li className="nav-item">
-                <Link to={"/admin"} className="nav-link">
-                  Admin Board
-                </Link>
-              </li>
-            )}
+    render() {
+        const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
 
-            {currentUser && (
-              <li className="nav-item">
-                <Link to={"/user"} className="nav-link">
-                  User
-                </Link>
-              </li>
-            )}
-          </div>
+        const PrivateRoute = ({ children }) => {
+            return AuthService.getCurrentUser() ? children : <Navigate to="/login" />;
+        };
 
-          {currentUser ? (
-            <div className="navbar-nav ml-auto">
-              <li className="nav-item">
-                <Link to={"/profile"} className="nav-link">
-                  {currentUser.username}
-                </Link>
-              </li>
-              <li className="nav-item">
-                <a href="/login" className="nav-link" onClick={this.logOut}>
-                  LogOut
-                </a>
-              </li>
+        return (
+            <div className="app-container">
+                <Header
+                    user={currentUser}
+                    showModeratorBoard={showModeratorBoard}
+                    showAdminBoard={showAdminBoard}
+                    onLogout={this.logOut}
+                />
+
+                <div className="main-content">
+                    <Routes>
+                        <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
+                        <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                        <Route path="/user" element={<PrivateRoute><BoardUser /></PrivateRoute>} />
+                        <Route path="/mod" element={<PrivateRoute><BoardModerator /></PrivateRoute>} />
+                        <Route path="/admin" element={<PrivateRoute><BoardAdmin /></PrivateRoute>} />
+                    </Routes>
+                </div>
             </div>
-          ) : (
-            <div className="navbar-nav ml-auto">
-              <li className="nav-item">
-                <Link to={"/login"} className="nav-link">
-                  Login
-                </Link>
-              </li>
-
-              <li className="nav-item">
-                <Link to={"/register"} className="nav-link">
-                  Sign Up
-                </Link>
-              </li>
-            </div>
-          )}
-        </nav>
-
-        <div className="container mt-3">
-            <Routes>
-                <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
-                <Route path="/home" element={<PrivateRoute><Home /></PrivateRoute>} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-                <Route path="/user" element={<PrivateRoute><BoardUser /></PrivateRoute>} />
-                <Route path="/mod" element={<PrivateRoute><BoardModerator /></PrivateRoute>} />
-                <Route path="/admin" element={<PrivateRoute><BoardAdmin /></PrivateRoute>} />
-            </Routes>
-
-        </div>
-
-        {/* <AuthVerify logOut={this.logOut}/> */}
-      </div>
-    );
-  }
+        );
+    }
 }
 
 export default App;
