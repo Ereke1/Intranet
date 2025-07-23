@@ -25,7 +25,4 @@ React JWT Authentication (without Redux)
 ![image](https://user-images.githubusercontent.com/63150702/228602112-29c27d8a-df38-4d56-9243-aa3f7cb0db38.png)
 
 
-<br><br>
-Sources :<br>
-- https://www.bezkoder.com/spring-boot-jwt-authentication/
-- https://www.bezkoder.com/react-jwt-auth/
+
